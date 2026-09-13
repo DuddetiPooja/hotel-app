@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hotel Booking & Menu Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f9; color: #333; }
+        h1 { color: #2c3e50; text-align: center; }
+        .container { display: flex; gap: 30px; margin-top: 30px; }
+        .section { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1; }
+        h2 { border-bottom: 2px solid #3498db; padding-bottom: 10px; color: #3498db; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 12px; font-size: 15px; }
+        .badge { font-weight: bold; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+        .available { background-color: #2ecc71; color: white; }
+        .reserved { background-color: #e74c3c; color: white; }
+        form { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 3px; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #3498db; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #2980b9; }
+    </style>
+</head>
+<body>
+
+    <h1>Hotel Booking & Management System</h1>
+
+    <div class="container">
+        <div class="section">
+            <h2>Tables Management</h2>
+            <ul id="table-list">Loading tables...</ul>
+            
+            <form id="table-form">
+                <h3>Add New Table</h3>
+                <div class="form-group">
+                    <label>Table Number:</label>
+                    <input type="number" id="tableNumber" required>
+                </div>
+                <div class="form-group">
+                    <label>Capacity:</label>
+                    <input type="number" id="capacity" required>
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="isReserved">
+                        <option value="false">Available</option>
+                        <option value="true">Reserved</option>
+                    </select>
+                </div>
+                <button type="submit">Save Table</button>
+            </form>
+        </div>
+        
+        <div class="section">
+            <h2>Food Menu</h2>
+            <ul id="food-list">Loading menu...</ul>
+
+            <form id="food-form">
+                <h3>Add New Food Item</h3>
+                <div class="form-group">
+                    <label>Item Name:</label>
+                    <input type="text" id="foodName" required>
+                </div>
+                <div class="form-group">
+                    <label>Price ($):</label>
+                    <input type="number" step="0.01" id="foodPrice" required>
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <input type="text" id="foodCategory" required>
+                </div>
+                <button type="submit">Save Food Item</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Load data on page startup
+        function loadTables() {
+            fetch('/api/tables')
+                .then(res => res.json())
+                .then(data => {
+                    const tableList = document.getElementById('table-list');
+                    tableList.innerHTML = '';
+                    if (data.length === 0) { tableList.innerHTML = '<li>No tables found.</li>'; return; }
+                    data.forEach(t => {
+                        const statusClass = t.reserved ? 'reserved' : 'available';
+                        const statusText = t.reserved ? 'Reserved' : 'Available';
+                        tableList.innerHTML += `<li>Table #${t.tableNumber} (Capacity: ${t.capacity}) — <span class="badge ${statusClass}">${statusText}</span></li>`;
+                    });
+                });
+        }
+
+        function loadFood() {
+            fetch('/api/food')
+                .then(res => res.json())
+                .then(data => {
+                    const foodList = document.getElementById('food-list');
+                    foodList.innerHTML = '';
+                    if (data.length === 0) { foodList.innerHTML = '<li>No food items found.</li>'; return; }
+                    data.forEach(f => {
+                        foodList.innerHTML += `<li><strong>${f.name}</strong> (${f.category}) — $${f.price.toFixed(2)}</li>`;
+                    });
+                });
+        }
+
+        loadTables();
+        loadFood();
+
+        // Handle Table Form Submission
+        document.getElementById('table-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newTable = {
+                tableNumber: parseInt(document.getElementById('tableNumber').value),
+                capacity: parseInt(document.getElementById('capacity').value),
+                reserved: document.getElementById('isReserved').value === 'true'
+            };
+
+            fetch('/api/tables', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newTable)
+            }).then(() => {
+                document.getElementById('table-form').reset();
+                loadTables();
+            });
+        });
+
+        // Handle Food Form Submission
+        document.getElementById('food-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newFood = {
+                name: document.getElementById('foodName').value,
+                price: parseFloat(document.getElementById('foodPrice').value),
+                category: document.getElementById('foodCategory').value
+            };
+
+            fetch('/api/food', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newFood)
+            }).then(() => {
+                document.getElementById('food-form').reset();
+                loadFood();
+            });
+        });
+    </script>
+
+</body>
+</html>
